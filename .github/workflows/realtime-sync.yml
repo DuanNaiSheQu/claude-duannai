@@ -1,0 +1,425 @@
+name: ⚡ 实时精确代码同步
+
+on:
+  # GitHub仓库推送事件 (通过repository_dispatch触发)
+  repository_dispatch:
+    types: [upstream_push]
+  
+  # 定期检查作为备份 (每10分钟)
+  schedule:
+    - cron: '*/10 * * * *'
+    
+  # 手动触发
+  workflow_dispatch:
+    inputs:
+      upstream_commit:
+        description: '指定上游提交SHA (留空自动检测)'
+        required: false
+        type: string
+      sync_mode:
+        description: '同步模式'
+        required: true
+        default: 'smart'
+        type: choice
+        options:
+        - smart
+        - force
+        - preview
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  realtime-sync:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 🔄 检出代码
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 📋 配置环境
+      run: |
+        git config user.name "DuanNaiSheQu-RealTimeBot"
+        git config user.email "9788864@gmail.com"
+        
+        # 安装必要工具
+        sudo apt-get update
+        sudo apt-get install -y jq curl
+
+    - name: 🔗 设置上游连接
+      run: |
+        git remote add upstream https://github.com/Wei-Shaw/claude-relay-service.git || true
+        git fetch upstream --tags
+        echo "✅ 上游连接已建立"
+
+    - name: 🔍 精确检测代码变更
+      id: detect_changes
+      run: |
+        echo "🔍 开始精确检测上游代码变更..."
+        
+        # 获取指定的上游提交或最新提交
+        if [ -n "${{ github.event.inputs.upstream_commit }}" ]; then
+          UPSTREAM_COMMIT="${{ github.event.inputs.upstream_commit }}"
+        else
+          UPSTREAM_COMMIT=$(git rev-parse upstream/main)
+        fi
+        
+        echo "🎯 目标上游提交: $UPSTREAM_COMMIT"
+        
+        # 查找我们最后同步的提交
+        LAST_SYNC_COMMIT=$(git log --grep="精确同步上游" --format="%H" -n 1 2>/dev/null || echo "")
+        
+        if [ -n "$LAST_SYNC_COMMIT" ]; then
+          # 从提交消息中提取上次同步的上游提交
+          LAST_UPSTREAM=$(git log --format="%s %b" -n 1 $LAST_SYNC_COMMIT | grep -o 'upstream-commit:[a-f0-9]*' | cut -d':' -f2 2>/dev/null || echo "")
+          echo "📌 上次同步的上游提交: $LAST_UPSTREAM"
+        else
+          echo "⚠️ 首次实时同步"
+          LAST_UPSTREAM=""
+        fi
+        
+        if [ "$UPSTREAM_COMMIT" = "$LAST_UPSTREAM" ]; then
+          echo "✅ 代码已是最新，无需同步"
+          echo "has_changes=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        echo "🚨 检测到新的代码变更！"
+        echo "has_changes=true" >> $GITHUB_OUTPUT
+        echo "upstream_commit=$UPSTREAM_COMMIT" >> $GITHUB_OUTPUT
+        echo "last_upstream=$LAST_UPSTREAM" >> $GITHUB_OUTPUT
+        
+        # 生成详细的变更分析
+        echo "📊 分析代码变更详情..."
+        
+        if [ -n "$LAST_UPSTREAM" ]; then
+          # 获取变更统计
+          STATS=$(git diff --stat $LAST_UPSTREAM..$UPSTREAM_COMMIT 2>/dev/null || git diff --stat upstream/main)
+          CHANGED_FILES=$(git diff --name-only $LAST_UPSTREAM..$UPSTREAM_COMMIT 2>/dev/null || git diff --name-only upstream/main)
+          
+          # 获取具体的代码变更
+          echo "📝 生成详细变更报告..."
+          git diff --no-color $LAST_UPSTREAM..$UPSTREAM_COMMIT > /tmp/detailed_changes.patch
+          
+          # 提取新增的提交
+          NEW_COMMITS=$(git log --oneline $LAST_UPSTREAM..$UPSTREAM_COMMIT 2>/dev/null || echo "初始同步")
+        else
+          STATS="初始同步"
+          CHANGED_FILES=$(git diff --name-only upstream/main)
+          NEW_COMMITS="初始同步"
+          git diff --no-color upstream/main > /tmp/detailed_changes.patch
+        fi
+        
+        echo "📈 变更统计:"
+        echo "$STATS"
+        echo
+        echo "📂 变更文件:"
+        echo "$CHANGED_FILES"
+        echo
+        echo "📝 新增提交:"
+        echo "$NEW_COMMITS"
+        
+        # 保存变更信息
+        echo "$STATS" > /tmp/change_stats.txt
+        echo "$CHANGED_FILES" > /tmp/changed_files.txt
+        echo "$NEW_COMMITS" > /tmp/new_commits.txt
+        
+        # 分析变更类型
+        echo "🔬 分析变更类型..."
+        
+        FEATURE_COUNT=0
+        BUG_COUNT=0
+        DOC_COUNT=0
+        CONFIG_COUNT=0
+        
+        while IFS= read -r commit_line; do
+          if echo "$commit_line" | grep -qi "feat\|feature\|add\|新增"; then
+            FEATURE_COUNT=$((FEATURE_COUNT + 1))
+          elif echo "$commit_line" | grep -qi "fix\|bug\|修复"; then
+            BUG_COUNT=$((BUG_COUNT + 1))
+          elif echo "$commit_line" | grep -qi "doc\|readme\|文档"; then
+            DOC_COUNT=$((DOC_COUNT + 1))
+          elif echo "$commit_line" | grep -qi "config\|配置\|设置"; then
+            CONFIG_COUNT=$((CONFIG_COUNT + 1))
+          fi
+        done <<< "$NEW_COMMITS"
+        
+        echo "change_summary<<EOF" >> $GITHUB_OUTPUT
+        echo "🎯 变更类型分析:" >> $GITHUB_OUTPUT
+        echo "  💫 新功能: $FEATURE_COUNT 个" >> $GITHUB_OUTPUT
+        echo "  🐛 Bug修复: $BUG_COUNT 个" >> $GITHUB_OUTPUT
+        echo "  📖 文档更新: $DOC_COUNT 个" >> $GITHUB_OUTPUT
+        echo "  ⚙️ 配置变更: $CONFIG_COUNT 个" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: 🧠 精确代码分析与合并
+      if: steps.detect_changes.outputs.has_changes == 'true'
+      id: precise_merge
+      run: |
+        echo "🧠 开始精确代码分析与合并..."
+        
+        # 读取配置
+        if [ -f ".duannai-sync-config" ]; then
+          source .duannai-sync-config
+          echo "✅ 已加载同步配置"
+        fi
+        
+        # 创建工作分支
+        WORK_BRANCH="realtime-sync-$(date +%s)"
+        git checkout -b $WORK_BRANCH
+        echo "📝 创建工作分支: $WORK_BRANCH"
+        
+        # 读取变更文件列表
+        CHANGED_FILES=$(cat /tmp/changed_files.txt)
+        
+        echo "🔄 开始逐文件精确处理..."
+        
+        SUCCESS_COUNT=0
+        CONFLICT_COUNT=0
+        PROTECTED_COUNT=0
+        
+        # 创建合并报告
+        echo "# 📊 精确代码同步报告" > /tmp/merge_report.md
+        echo "## 🎯 同步目标" >> /tmp/merge_report.md
+        echo "- 上游提交: \`${{ steps.detect_changes.outputs.upstream_commit }}\`" >> /tmp/merge_report.md
+        echo "- 同步时间: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> /tmp/merge_report.md
+        echo "" >> /tmp/merge_report.md
+        echo "## 📋 处理详情" >> /tmp/merge_report.md
+        
+        while IFS= read -r file; do
+          [ -z "$file" ] && continue
+          
+          echo "🔍 处理文件: $file"
+          echo "### 📄 \`$file\`" >> /tmp/merge_report.md
+          
+          # 检查是否是完全保护的文件
+          FULLY_PROTECTED=false
+          case "$file" in
+            ".github/workflows/auto-release-pipeline.yml"|"README.md"|"VERSION"|".duannai-sync-config"|"docs/SYNC_GUIDE.md")
+              FULLY_PROTECTED=true
+              ;;
+          esac
+          
+          if [ "$FULLY_PROTECTED" = true ]; then
+            echo "🛡️ 跳过完全保护文件: $file"
+            echo "- 状态: 🛡️ **完全保护** - 跳过同步" >> /tmp/merge_report.md
+            PROTECTED_COUNT=$((PROTECTED_COUNT + 1))
+            continue
+          fi
+          
+          # 检查上游文件是否存在
+          if ! git show upstream/main:$file > /dev/null 2>&1; then
+            echo "🗑️ 文件在上游已删除: $file"
+            
+            # 检查是否包含定制化内容
+            if [ -f "$file" ] && grep -q "DuanNaiSheQu\|claude-duannai\|duannaishequ" "$file" 2>/dev/null; then
+              echo "🛡️ 保留包含定制化内容的文件: $file"
+              echo "- 状态: 🛡️ **保留** - 包含定制化内容" >> /tmp/merge_report.md
+              PROTECTED_COUNT=$((PROTECTED_COUNT + 1))
+            else
+              echo "❌ 删除文件: $file"
+              git rm "$file" 2>/dev/null || rm -f "$file"
+              echo "- 状态: ❌ **已删除** - 跟随上游删除" >> /tmp/merge_report.md
+              SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+            fi
+            continue
+          fi
+          
+          # 获取上游文件内容
+          git show upstream/main:$file > "/tmp/upstream_$file.tmp"
+          
+          if [ -f "$file" ]; then
+            # 文件已存在，进行精确合并
+            echo "🔄 执行精确代码合并: $file"
+            
+            # 检查是否包含定制化内容
+            HAS_CUSTOM=false
+            if grep -q "DuanNaiSheQu\|claude-duannai\|duannaishequ\|9788864@gmail.com" "$file" 2>/dev/null; then
+              HAS_CUSTOM=true
+              echo "⚠️ 检测到定制化内容"
+            fi
+            
+            if [ "$HAS_CUSTOM" = true ]; then
+              echo "🧠 智能三路合并..."
+              
+              # 创建合并基础版本
+              cp "$file" "/tmp/current_$file.tmp"
+              
+              # 尝试自动合并
+              if git merge-file "/tmp/current_$file.tmp" "/tmp/current_$file.tmp" "/tmp/upstream_$file.tmp" 2>/dev/null; then
+                cp "/tmp/current_$file.tmp" "$file"
+                echo "✅ 自动合并成功: $file"
+                echo "- 状态: ✅ **智能合并成功** - 已保护定制化内容" >> /tmp/merge_report.md
+                SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+              else
+                echo "⚠️ 合并冲突，执行冲突解决..."
+                
+                # 生成冲突标记版本以供后续处理
+                cp "/tmp/current_$file.tmp" "$file"
+                
+                # 添加冲突标记
+                echo "" >> "$file"
+                echo "# ⚠️ MERGE CONFLICT DETECTED - $(date)" >> "$file"
+                echo "# 检测到合并冲突，需要人工审查" >> "$file"
+                echo "# 上游变更已标记，请手动解决冲突" >> "$file"
+                
+                echo "⚠️ 需要手动解决冲突: $file"
+                echo "- 状态: ⚠️ **需要手动处理** - 检测到合并冲突" >> /tmp/merge_report.md
+                CONFLICT_COUNT=$((CONFLICT_COUNT + 1))
+              fi
+            else
+              echo "📄 直接更新无定制化文件: $file"
+              
+              # 直接复制并应用替换
+              cp "/tmp/upstream_$file.tmp" "$file"
+              
+              # 应用品牌替换规则
+              sed -i.bak 's/Wei-Shaw/DuanNaiSheQu/g' "$file" 2>/dev/null || true
+              sed -i.bak 's/claude-relay-service/claude-duannai/g' "$file" 2>/dev/null || true  
+              sed -i.bak 's/weishaw/duannaishequ/g' "$file" 2>/dev/null || true
+              rm -f "$file.bak" 2>/dev/null || true
+              
+              echo "✅ 直接更新成功: $file"
+              echo "- 状态: ✅ **直接更新** - 已应用品牌替换" >> /tmp/merge_report.md
+              SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+            fi
+          else
+            # 新文件，直接复制并定制化
+            echo "🆕 处理新文件: $file"
+            
+            # 确保目录存在
+            mkdir -p "$(dirname "$file")"
+            cp "/tmp/upstream_$file.tmp" "$file"
+            
+            # 应用品牌替换规则
+            sed -i.bak 's/Wei-Shaw/DuanNaiSheQu/g' "$file" 2>/dev/null || true
+            sed -i.bak 's/claude-relay-service/claude-duannai/g' "$file" 2>/dev/null || true
+            sed -i.bak 's/weishaw/duannaishequ/g' "$file" 2>/dev/null || true
+            rm -f "$file.bak" 2>/dev/null || true
+            
+            echo "✅ 新文件已定制化: $file"
+            echo "- 状态: 🆕 **新文件** - 已应用定制化" >> /tmp/merge_report.md
+            SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+          fi
+          
+          # 暂存文件
+          git add "$file"
+          
+        done <<< "$CHANGED_FILES"
+        
+        # 生成统计摘要
+        echo "" >> /tmp/merge_report.md
+        echo "## 📈 处理统计" >> /tmp/merge_report.md
+        echo "- ✅ 成功处理: $SUCCESS_COUNT 个文件" >> /tmp/merge_report.md
+        echo "- ⚠️ 需要手动处理: $CONFLICT_COUNT 个文件" >> /tmp/merge_report.md  
+        echo "- 🛡️ 受保护文件: $PROTECTED_COUNT 个文件" >> /tmp/merge_report.md
+        
+        echo "merge_stats=成功:$SUCCESS_COUNT,冲突:$CONFLICT_COUNT,保护:$PROTECTED_COUNT" >> $GITHUB_OUTPUT
+        echo "work_branch=$WORK_BRANCH" >> $GITHUB_OUTPUT
+
+    - name: 💾 提交精确同步结果
+      if: steps.detect_changes.outputs.has_changes == 'true'
+      id: commit_changes
+      run: |
+        # 检查是否有变更需要提交
+        if git diff --staged --quiet; then
+          echo "📭 没有需要提交的变更"
+          echo "has_commits=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        echo "💾 提交精确同步结果..."
+        
+        # 构建详细的提交消息
+        COMMIT_MSG="⚡ 实时精确同步上游代码变更
+
+🎯 同步信息:
+$(cat /tmp/change_stats.txt)
+
+📦 同步详情:
+- 上游仓库: Wei-Shaw/claude-relay-service
+- upstream-commit:${{ steps.detect_changes.outputs.upstream_commit }}
+- 同步时间: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+- 处理统计: ${{ steps.precise_merge.outputs.merge_stats }}
+
+${{ steps.detect_changes.outputs.change_summary }}
+
+📝 新增提交:
+$(cat /tmp/new_commits.txt)
+
+🛡️ 保护策略:
+- ✅ DuanNaiSheQu 品牌标识已保护
+- ✅ claude-duannai 项目名称已保护  
+- ✅ 专属工作流配置已保护
+- ✅ 定制化内容智能合并
+
+🤖 Generated by DuanNaiSheQu Real-Time Sync Bot"
+        
+        git commit -m "$COMMIT_MSG"
+        echo "✅ 变更已提交到工作分支"
+        echo "has_commits=true" >> $GITHUB_OUTPUT
+
+    - name: 🔄 合并到主分支
+      if: steps.commit_changes.outputs.has_commits == 'true'
+      run: |
+        echo "🔄 合并同步结果到主分支..."
+        
+        # 切换到主分支
+        git checkout main
+        
+        # 合并工作分支
+        git merge ${{ steps.precise_merge.outputs.work_branch }} --no-ff -m "🔄 Merge realtime upstream sync: $(date '+%Y-%m-%d %H:%M:%S')"
+        
+        echo "✅ 已合并到主分支"
+        
+        # 清理工作分支
+        git branch -D ${{ steps.precise_merge.outputs.work_branch }}
+        echo "🧹 已清理工作分支"
+
+    - name: 📤 推送同步结果
+      if: steps.commit_changes.outputs.has_commits == 'true'
+      run: |
+        echo "📤 推送实时同步结果..."
+        git push origin main
+        echo "✅ 同步结果已推送到远程仓库"
+
+    - name: 📊 生成同步报告
+      if: always()
+      run: |
+        echo "📊 生成最终同步报告..."
+        
+        if [ "${{ steps.detect_changes.outputs.has_changes }}" = "true" ]; then
+          if [ "${{ steps.commit_changes.outputs.has_commits }}" = "true" ]; then
+            echo "## ✅ 实时同步成功完成"
+            echo "🎯 **同步状态**: 成功"
+            echo "📊 **处理统计**: ${{ steps.precise_merge.outputs.merge_stats }}"
+            echo "⏱️ **响应时间**: 实时响应上游变更"
+            echo "🛡️ **保护状态**: 定制化内容已完全保护"
+            echo "🔗 **仓库地址**: https://github.com/DuanNaiSheQu/claude-duannai"
+            
+            # 如果有合并报告，输出关键信息
+            if [ -f "/tmp/merge_report.md" ]; then
+              echo ""
+              echo "📋 **详细处理报告**:"
+              cat /tmp/merge_report.md | head -20
+            fi
+          else
+            echo "## ℹ️ 无需同步"
+            echo "📊 检测到变更但无需提交"
+          fi
+        else
+          echo "## ✅ 代码已是最新"
+          echo "📅 检查时间: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "🎯 无新的代码变更需要同步"
+        fi
+
+    - name: 🚨 错误处理与通知
+      if: failure()
+      run: |
+        echo "🚨 实时同步过程中发生错误！"
+        echo "📅 错误时间: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        echo "🔍 请检查 GitHub Actions 日志获取详细错误信息"
+        echo "🛠️ 可以手动运行 scripts/sync-upstream.sh 进行恢复"

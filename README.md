@@ -6,8 +6,8 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 [![Redis](https://img.shields.io/badge/Redis-6+-red.svg)](https://redis.io/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![Docker Build](https://github.com/DuanNaiSheQu/claude-service-okoko/actions/workflows/auto-release-pipeline.yml/badge.svg)](https://github.com/DuanNaiSheQu/claude-service-okoko/actions/workflows/auto-release-pipeline.yml)
-[![Docker Pulls](https://img.shields.io/docker/pulls/duannaishequ/claude-service-okoko)](https://hub.docker.com/r/duannaishequ/claude-service-okoko)
+[![Docker Build](https://github.com/DuanNaiSheQu/claude-duannai/actions/workflows/auto-release-pipeline.yml/badge.svg)](https://github.com/DuanNaiSheQu/claude-duannai/actions/workflows/auto-release-pipeline.yml)
+[![Docker Pulls](https://img.shields.io/docker/pulls/duannaishequ/claude-duannai)](https://hub.docker.com/r/duannaishequ/claude-duannai)
 
 **🔐 DuanNaiSheQu 专属定制版 Claude API中转服务，支持多账户管理**
 

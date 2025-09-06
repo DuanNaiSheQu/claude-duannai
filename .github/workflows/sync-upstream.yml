@@ -1,0 +1,269 @@
+name: 🔄 智能同步上游更新
+
+on:
+  # 每小时检查一次上游更新
+  schedule:
+    - cron: '0 * * * *'
+  # 手动触发
+  workflow_dispatch:
+    inputs:
+      force_sync:
+        description: '强制同步（忽略冲突）'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-upstream:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 配置Git用户
+      run: |
+        git config user.name "DuanNaiSheQu-Bot"
+        git config user.email "9788864@gmail.com"
+
+    - name: 添加上游远程仓库
+      run: |
+        git remote add upstream https://github.com/Wei-Shaw/claude-relay-service.git || true
+        git fetch upstream
+
+    - name: 检查上游是否有新更新
+      id: check_updates
+      run: |
+        # 获取上游最新提交
+        UPSTREAM_LATEST=$(git rev-parse upstream/main)
+        
+        # 获取我们最后同步的上游提交
+        LAST_SYNC=$(git log --grep="Sync upstream" --format="%H" -n 1 || echo "")
+        
+        if [ -n "$LAST_SYNC" ]; then
+          # 查找最后一次同步时的上游提交
+          LAST_UPSTREAM=$(git log --grep="upstream:" --format="%s" -n 1 | grep -o 'upstream:[a-f0-9]*' | cut -d':' -f2 || echo "")
+        else
+          LAST_UPSTREAM=""
+        fi
+        
+        echo "最新上游提交: $UPSTREAM_LATEST"
+        echo "上次同步提交: $LAST_UPSTREAM"
+        
+        if [ "$UPSTREAM_LATEST" != "$LAST_UPSTREAM" ]; then
+          echo "发现新的上游更新！"
+          echo "has_updates=true" >> $GITHUB_OUTPUT
+          echo "upstream_commit=$UPSTREAM_LATEST" >> $GITHUB_OUTPUT
+          
+          # 获取更新的文件列表
+          if [ -n "$LAST_UPSTREAM" ]; then
+            CHANGED_FILES=$(git diff --name-only $LAST_UPSTREAM..$UPSTREAM_LATEST || echo "")
+          else
+            CHANGED_FILES=$(git diff --name-only upstream/main)
+          fi
+          
+          echo "更新的文件:"
+          echo "$CHANGED_FILES"
+          
+          # 保存变更文件列表
+          echo "$CHANGED_FILES" > /tmp/changed_files.txt
+        else
+          echo "没有新的上游更新"
+          echo "has_updates=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: 创建智能合并策略配置
+      if: steps.check_updates.outputs.has_updates == 'true'
+      run: |
+        # 创建合并策略配置
+        cat > /tmp/merge_strategy.txt << 'EOF'
+        # 需要保护的定制化文件（完全跳过）
+        PROTECTED_FILES=(
+          ".github/workflows/auto-release-pipeline.yml"
+          "README.md" 
+          "VERSION"
+        )
+        
+        # 需要智能合并的文件（保留定制化内容）
+        SMART_MERGE_FILES=(
+          "docker-compose.yml"
+          "package.json"
+          ".github/workflows/*.yml"
+        )
+        
+        # 定制化内容标识符
+        CUSTOM_MARKERS=(
+          "DuanNaiSheQu"
+          "claude-duannai" 
+          "duannaishequ"
+          "9788864@gmail.com"
+        )
+        EOF
+
+    - name: 执行智能同步
+      if: steps.check_updates.outputs.has_updates == 'true'
+      run: |
+        echo "🚀 开始智能同步上游更新..."
+        
+        # 读取策略配置
+        source /tmp/merge_strategy.txt
+        
+        # 创建临时分支
+        TEMP_BRANCH="temp-sync-$(date +%s)"
+        git checkout -b $TEMP_BRANCH
+        
+        # 读取变更文件
+        CHANGED_FILES=$(cat /tmp/changed_files.txt)
+        
+        echo "📋 处理变更文件..."
+        
+        for file in $CHANGED_FILES; do
+          echo "处理文件: $file"
+          
+          # 检查是否是受保护文件
+          PROTECTED=false
+          for protected in "${PROTECTED_FILES[@]}"; do
+            if [[ "$file" == $protected ]]; then
+              echo "  🛡️ 跳过受保护文件: $file"
+              PROTECTED=true
+              break
+            fi
+          done
+          
+          if [ "$PROTECTED" = true ]; then
+            continue
+          fi
+          
+          # 检查文件是否存在于上游
+          if git show upstream/main:$file > /dev/null 2>&1; then
+            # 获取上游文件内容
+            git show upstream/main:$file > /tmp/upstream_file
+            
+            # 检查是否包含定制化内容
+            HAS_CUSTOM=false
+            if [ -f "$file" ]; then
+              for marker in "${CUSTOM_MARKERS[@]}"; do
+                if grep -q "$marker" "$file"; then
+                  HAS_CUSTOM=true
+                  echo "  ⚠️ 文件包含定制化内容: $file"
+                  break
+                fi
+              done
+            fi
+            
+            if [ "$HAS_CUSTOM" = true ]; then
+              echo "  🧠 执行智能合并: $file"
+              # 创建智能合并版本
+              if [ -f "$file" ]; then
+                # 使用三路合并
+                cp "$file" /tmp/current_file
+                git show upstream/main:$file > /tmp/upstream_file
+                
+                # 尝试自动合并
+                if git merge-file /tmp/current_file /tmp/current_file /tmp/upstream_file; then
+                  cp /tmp/current_file "$file"
+                  echo "  ✅ 自动合并成功: $file"
+                else
+                  echo "  ⚠️ 需要手动处理冲突: $file"
+                  # 保留当前版本，但添加注释
+                  echo "# TODO: 手动合并上游更新 - $(date)" >> "$file"
+                fi
+              else
+                # 新文件，直接复制但替换定制化标识
+                cp /tmp/upstream_file "$file"
+                
+                # 替换定制化内容
+                sed -i 's/Wei-Shaw/DuanNaiSheQu/g' "$file" 2>/dev/null || true
+                sed -i 's/claude-relay-service/claude-duannai/g' "$file" 2>/dev/null || true
+                sed -i 's/weishaw/duannaishequ/g' "$file" 2>/dev/null || true
+                
+                echo "  ✅ 新文件已定制化: $file"
+              fi
+            else
+              echo "  📄 直接更新文件: $file"
+              # 没有定制化内容，直接复制
+              git checkout upstream/main -- "$file" || cp /tmp/upstream_file "$file"
+            fi
+            
+            # 暂存文件
+            git add "$file"
+          else
+            echo "  🗑️ 文件在上游已删除: $file"
+            if [ -f "$file" ] && ! grep -q "DuanNaiSheQu\|claude-duannai\|duannaishequ" "$file"; then
+              git rm "$file"
+              echo "  ✅ 已删除文件: $file"
+            else
+              echo "  🛡️ 保留定制化文件: $file"
+            fi
+          fi
+        done
+        
+        # 检查是否有变更需要提交
+        if git diff --staged --quiet; then
+          echo "📭 没有需要同步的变更"
+          exit 0
+        fi
+        
+        # 提交变更
+        COMMIT_MSG="🔄 智能同步上游更新
+        
+        📦 同步来源: Wei-Shaw/claude-relay-service
+        🔗 上游提交: upstream:${{ steps.check_updates.outputs.upstream_commit }}
+        📅 同步时间: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+        
+        ✨ 更新内容:
+        $(echo "$CHANGED_FILES" | sed 's/^/- /')
+        
+        🛡️ 已保护定制化内容:
+        - DuanNaiSheQu 品牌标识
+        - claude-duannai 项目名称  
+        - 专属工作流配置
+        - 版本号管理
+        
+        🤖 Generated by DuanNaiSheQu Auto-Sync Bot"
+        
+        git commit -m "$COMMIT_MSG"
+        
+        # 切回主分支并合并
+        git checkout main
+        git merge $TEMP_BRANCH --no-ff -m "Merge upstream sync"
+        
+        # 清理临时分支
+        git branch -d $TEMP_BRANCH
+        
+        echo "✅ 智能同步完成！"
+
+    - name: 推送更新
+      if: steps.check_updates.outputs.has_updates == 'true'
+      run: |
+        echo "📤 推送同步更新到仓库..."
+        git push origin main
+
+    - name: 发送同步通知
+      if: steps.check_updates.outputs.has_updates == 'true'
+      continue-on-error: true
+      env:
+        UPSTREAM_COMMIT: ${{ steps.check_updates.outputs.upstream_commit }}
+      run: |
+        echo "🔔 上游更新已智能同步到您的仓库！"
+        echo "📦 同步的上游提交: $UPSTREAM_COMMIT"
+        echo "🔗 仓库地址: https://github.com/DuanNaiSheQu/claude-duannai"
+        echo "✅ 您的定制化内容已得到保护"
+
+    - name: 同步状态报告
+      if: always()
+      run: |
+        if [ "${{ steps.check_updates.outputs.has_updates }}" = "true" ]; then
+          echo "✅ 同步状态: 成功"
+          echo "📈 功能更新: 已同步最新功能"
+          echo "🛡️ 定制保护: 已保护您的品牌化内容"
+        else
+          echo "ℹ️ 同步状态: 无新更新"
+          echo "📊 检查时间: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        fi

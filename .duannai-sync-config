@@ -1,0 +1,48 @@
+# DuanNaiSheQu 智能同步配置文件
+# 此文件用于控制上游同步时的合并策略
+
+# 完全跳过的文件（永远不同步）
+PROTECTED_FILES=(
+  ".github/workflows/auto-release-pipeline.yml"
+  "README.md"
+  "VERSION" 
+  ".duannai-sync-config"
+)
+
+# 需要智能合并的文件（保留定制化内容）
+SMART_MERGE_FILES=(
+  "docker-compose.yml"
+  "package.json"
+  "Dockerfile"
+  ".github/workflows/*.yml"
+)
+
+# 定制化内容标识符（同步时会保护包含这些内容的部分）
+CUSTOM_MARKERS=(
+  "DuanNaiSheQu"
+  "claude-duannai"
+  "duannaishequ" 
+  "9788864@gmail.com"
+  "专属定制版"
+)
+
+# 自动替换规则（同步新文件时自动应用）
+REPLACEMENT_RULES=(
+  "s/Wei-Shaw/DuanNaiSheQu/g"
+  "s/claude-relay-service/claude-duannai/g" 
+  "s/weishaw/duannaishequ/g"
+  "s/Claude Relay Service/DuanNaiSheQu Claude Service/g"
+)
+
+# 同步频率（cron表达式）
+# 当前设置：每小时检查一次
+SYNC_SCHEDULE="0 * * * *"
+
+# 是否启用自动合并（true/false）
+AUTO_MERGE_ENABLED=true
+
+# 是否发送通知（true/false）  
+NOTIFICATIONS_ENABLED=true
+
+# 日志级别（debug/info/warn/error）
+LOG_LEVEL=info

@@ -1,972 +1,579 @@
 <template>
-  <div
-    class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900"
-  >
-    <!-- 主要内容容器 -->
-    <div class="container mx-auto px-4 py-8 lg:px-8">
-      <!-- 顶部导航栏 -->
-      <nav class="animate-fade-in-up mb-8 flex items-center justify-between sm:mb-12">
-        <div class="flex min-w-0 flex-1 items-center space-x-2 sm:space-x-3">
-          <div
-            :class="[
-              'animate-glow flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl sm:h-10 sm:w-10',
-              oemSettings.siteIconData ? '' : 'bg-gradient-to-br from-blue-500 to-purple-600'
-            ]"
-          >
-            <img
-              v-if="oemSettings.siteIconData"
-              :alt="oemSettings.siteName || 'Claude Relay Service'"
-              class="h-8 w-8 rounded-lg object-cover sm:h-10 sm:w-10"
-              :src="oemSettings.siteIconData"
-            />
-            <i
-              v-else
-              class="fas fa-project-diagram animate-pulse text-sm text-white sm:text-lg"
-            ></i>
-          </div>
-          <span
-            class="animate-slide-in-left animation-delay-200 truncate text-lg font-bold text-gray-900 dark:text-white sm:text-xl"
-          >
-            {{ oemSettings.siteName || 'Claude Relay Service' }}
-          </span>
-        </div>
-        <ThemeToggle
-          class="animate-slide-in-right animation-delay-300 flex-shrink-0"
-          mode="compact"
+  <div class="min-h-screen p-4 md:p-6" :class="isDarkMode ? 'gradient-bg-dark' : 'gradient-bg'">
+    <!-- 顶部导航 -->
+    <div class="glass-strong mb-6 rounded-3xl p-4 shadow-xl md:mb-8 md:p-6">
+      <div class="flex flex-col items-center justify-between gap-4 md:flex-row">
+        <LogoTitle
+          :loading="oemLoading"
+          :logo-src="oemSettings.siteIconData || oemSettings.siteIcon"
+          :subtitle="currentTab === 'stats' ? 'API Key 使用统计' : '使用教程'"
+          :title="oemSettings.siteName"
         />
-      </nav>
-
-      <!-- 主要内容区域 -->
-      <div class="grid items-center gap-6 sm:gap-8 md:gap-12 lg:grid-cols-4">
-        <!-- 左侧内容区域 -->
-        <div class="space-y-6 sm:space-y-8 lg:col-span-2">
-          <div class="space-y-4 sm:space-y-6">
-            <h1
-              class="animate-fade-in-up text-2xl font-bold leading-tight sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl"
-            >
-              <span class="animate-slide-in-left block text-gray-900 dark:text-white sm:inline">{{
-                oemSettings.siteName || 'Claude Relay Service'
-              }}</span>
-              <span
-                class="animate-slide-in-right animate-gradient-x mt-1 block bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent sm:mt-0"
-              >
-                智能 AI 编程新平台
-              </span>
-            </h1>
-            <p
-              class="animate-fade-in-up animation-delay-200 max-w-full text-base leading-relaxed text-gray-600 dark:text-gray-300 sm:text-lg lg:max-w-lg"
-            >
-              整合 Claude、Gemini、OpenAI
-              等顶尖技术，打造专属中转服务，让中国开发者用更低成本，享受同等优质的 AI 编程能力
-            </p>
+        <div class="flex items-center gap-2 md:gap-4">
+          <!-- 主题切换按钮 -->
+          <div class="flex items-center">
+            <ThemeToggle mode="dropdown" />
           </div>
 
-          <!-- 特性列表 -->
-          <div class="space-y-3 sm:space-y-4">
-            <div class="animate-fade-in-up animation-delay-300 flex items-center space-x-3">
-              <div
-                class="animate-bounce-slow flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50"
-              >
-                <i class="fas fa-chart-bar text-sm text-blue-600 dark:text-blue-400"></i>
-              </div>
-              <span class="text-sm text-gray-700 dark:text-gray-300 sm:text-base"
-                >智能 AI 代码生成和优化建议</span
-              >
-            </div>
-            <div class="animate-fade-in-up animation-delay-400 flex items-center space-x-3">
-              <div
-                class="flex h-8 w-8 flex-shrink-0 animate-float items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/50"
-              >
-                <i class="fas fa-shield-alt text-sm text-purple-600 dark:text-purple-400"></i>
-              </div>
-              <span class="text-sm text-gray-700 dark:text-gray-300 sm:text-base"
-                >成本降低高达 50% 的数据中转服务</span
-              >
-            </div>
-            <div class="animate-fade-in-up animation-delay-500 flex items-center space-x-3">
-              <div
-                class="animate-glow flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/50"
-              >
-                <i class="fas fa-cog text-sm text-green-600 dark:text-green-400"></i>
-              </div>
-              <span class="text-sm text-gray-700 dark:text-gray-300 sm:text-base"
-                >多平台支持和统一管理</span
-              >
-            </div>
-            <div class="animate-fade-in-up animation-delay-600 flex items-center space-x-3">
-              <div
-                class="flex h-8 w-8 flex-shrink-0 animate-pulse items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/50"
-              >
-                <i class="fas fa-rocket text-sm text-orange-600 dark:text-orange-400"></i>
-              </div>
-              <span class="text-sm text-gray-700 dark:text-gray-300 sm:text-base"
-                >专业级的安全和稳定性保障</span
-              >
-            </div>
-          </div>
-
-          <!-- 行动按钮 -->
-          <div class="flex flex-col gap-3 pt-4 sm:flex-row sm:gap-4">
-            <button
-              class="animate-fade-in-up animation-delay-700 group relative transform overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/25 sm:px-8 sm:py-4 sm:text-base"
-              @click="currentTab = 'stats'"
-            >
-              <span class="relative z-10 flex items-center justify-center space-x-2">
-                <i class="fas fa-chart-line animate-pulse"></i>
-                <span>查询编程用量</span>
-              </span>
-              <div
-                class="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-700 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-              ></div>
-            </button>
-            <button
-              class="animate-fade-in-up animation-delay-800 group transform rounded-2xl border-2 border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 transition-all duration-300 hover:-translate-y-1 hover:border-blue-400 hover:bg-blue-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-blue-900/50 sm:px-8 sm:py-4 sm:text-base"
-              @click="currentTab = 'tutorial'"
-            >
-              <span class="flex items-center justify-center space-x-2">
-                <i class="fas fa-graduation-cap animate-bounce"></i>
-                <span>查看教程</span>
-              </span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 右侧演示区域 -->
-        <div class="animate-fade-in-up animation-delay-400 relative mt-8 lg:col-span-2 lg:mt-0">
-          <!-- 代码演示窗口 -->
+          <!-- 分隔线 -->
           <div
-            class="relative max-w-full transform animate-float overflow-hidden rounded-2xl bg-gray-900 shadow-2xl transition-transform duration-500 sm:rounded-3xl lg:rotate-1 lg:hover:rotate-0"
+            class="h-8 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent opacity-50 dark:via-gray-600"
+          />
+
+          <!-- 用户登录按钮 (仅在 LDAP 启用时显示) -->
+          <router-link
+            v-if="oemSettings.ldapEnabled"
+            class="user-login-button flex items-center gap-2 rounded-2xl px-4 py-2 text-white transition-all duration-300 md:px-5 md:py-2.5"
+            to="/user-login"
           >
-            <!-- 窗口标题栏 -->
-            <div class="flex items-center justify-between bg-gray-800 px-3 py-2 sm:px-6 sm:py-4">
-              <div class="flex space-x-1 sm:space-x-2">
-                <div
-                  class="animation-delay-100 h-2 w-2 animate-pulse rounded-full bg-red-500 sm:h-3 sm:w-3"
-                ></div>
-                <div
-                  class="animation-delay-200 h-2 w-2 animate-pulse rounded-full bg-yellow-500 sm:h-3 sm:w-3"
-                ></div>
-                <div
-                  class="animation-delay-300 h-2 w-2 animate-pulse rounded-full bg-green-500 sm:h-3 sm:w-3"
-                ></div>
-              </div>
-              <div
-                class="animate-slide-in-right animation-delay-600 ml-2 truncate text-xs text-gray-400 sm:text-xs"
-              >
-                支持语言: JAVA • Python • Go
-              </div>
-            </div>
-
-            <!-- 代码内容 -->
-            <div class="overflow-hidden p-3 text-sm leading-relaxed sm:p-6 sm:text-base">
-              <div
-                class="animate-slide-in-left animation-delay-700 mb-2 text-xs text-blue-300 sm:mb-3 sm:text-sm"
-              >
-                🚀 正在调用 AI 编程助手服务...
-              </div>
-
-              <!-- 简化的代码块 -->
-              <div
-                class="animate-fade-in-up animation-delay-800 overflow-x-auto rounded-lg bg-gray-800/50 p-2 sm:p-4"
-              >
-                <pre
-                  class="whitespace-pre-wrap break-words text-xs sm:text-sm"
-                ><code class="text-cyan-300"><span class="text-yellow-300">getCodingAssistant</span>(<span class="text-orange-300">prompt</span>) {
-  <span class="text-purple-400">fetch</span>(<span class="text-green-300">'/api/v1/messages'</span>, {
-    <span class="text-orange-300">method</span>: <span class="text-green-300">'POST'</span>,
-    <span class="text-orange-300">body</span>: <span class="text-yellow-300">JSON</span>.stringify({
-      <span class="text-orange-300">model</span>: <span class="text-green-300">'claude-sonnet-4'</span>,
-      <span class="text-orange-300">messages</span>: [{ 
-        <span class="text-orange-300">content</span>: prompt 
-      }]
-    })
-  })
-}</code></pre>
-              </div>
-
-              <div
-                class="animate-slide-in-left animation-delay-900 mt-2 text-xs text-green-400 sm:mt-4 sm:text-sm"
-              >
-                ✨ AI 编程助手响应完成！节省 60% 成本
-              </div>
-            </div>
-          </div>
-
-          <!-- 装饰元素 -->
-          <div
-            class="animation-delay-500 absolute -right-2 -top-2 hidden h-16 w-16 animate-float rounded-full bg-gradient-to-br from-blue-400/20 to-purple-400/20 blur-xl sm:-right-4 sm:-top-4 sm:block sm:h-24 sm:w-24"
-          ></div>
-          <div
-            class="animate-bounce-slow animation-delay-800 absolute -bottom-4 -left-2 hidden h-20 w-20 rounded-full bg-gradient-to-br from-purple-400/20 to-pink-400/20 blur-xl sm:-bottom-8 sm:-left-4 sm:block sm:h-32 sm:w-32"
-          ></div>
-        </div>
-      </div>
-
-      <!-- 套餐推荐卡片 -->
-      <div class="mt-20">
-        <div class="mb-8 text-center">
-          <h2 class="mb-3 text-3xl font-bold text-gray-900 dark:text-white lg:text-4xl">
-            AI 套餐推荐
-          </h2>
-          <p class="mx-auto max-w-2xl text-gray-600 dark:text-gray-300">
-            根据你的使用场景选择最合适的模型套餐，支持一键接入与统一统计
-          </p>
-        </div>
-
-        <div class="grid grid-cols-1 gap-6 md:grid-cols-3 xl:gap-8">
-          <!-- Service Plan Cards -->
-          <div
-            v-for="plan in servicePlans"
-            :key="plan.id"
-            class="group transform transition-all duration-300 hover:-translate-y-2"
+            <i class="fas fa-user text-sm md:text-base" />
+            <span class="text-xs font-semibold tracking-wide md:text-sm">用户登录</span>
+          </router-link>
+          <!-- 管理后台按钮 -->
+          <router-link
+            class="admin-button-refined flex items-center gap-2 rounded-2xl px-4 py-2 transition-all duration-300 md:px-5 md:py-2.5"
+            to="/dashboard"
           >
-            <div
-              class="relative flex h-full flex-col rounded-3xl bg-white p-8 shadow-lg dark:bg-gray-800"
-            >
-              <div
-                class="absolute right-6 top-6 rounded-full px-3 py-1 text-xs font-semibold text-white"
-                :class="plan.tagClass"
-              >
-                {{ plan.tag }}
-              </div>
-              <div
-                class="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl"
-                :class="plan.iconBg"
-              >
-                <i class="text-2xl text-white" :class="plan.icon"></i>
-              </div>
-              <h3 class="mb-1 text-xl font-bold text-gray-900 dark:text-white">{{ plan.name }}</h3>
-              <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
-                {{ plan.description }}
-              </p>
-              <ul class="mb-6 space-y-2 text-sm text-gray-700 dark:text-gray-300">
-                <li v-for="feature in plan.features" :key="feature" class="flex items-center gap-2">
-                  <i class="fas fa-check" :class="plan.featureIconClass"></i>
-                  {{ feature }}
-                </li>
-              </ul>
-              <div class="mt-auto flex items-end justify-end">
-                <span
-                  class="rounded-xl bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-300"
-                  >介绍</span
-                >
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 为什么选择我们 -->
-      <div class="mt-20">
-        <div class="mb-12 text-center">
-          <h2 class="mb-4 text-3xl font-bold text-gray-900 dark:text-white lg:text-4xl">
-            为什么选择我们的AI中转服务？
-          </h2>
-          <p class="mx-auto max-w-2xl text-gray-600 dark:text-gray-300">
-            整合全球顶尖AI模型，为您提供稳定、高效、低成本的统一API接入服务。
-          </p>
-        </div>
-
-        <!-- 特性网格 -->
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:gap-8">
-          <!-- 智能代码生成 -->
-          <div
-            class="group transform transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
-          >
-            <div
-              class="flex h-full flex-col rounded-2xl bg-white p-4 shadow-lg dark:bg-gray-800 sm:rounded-3xl sm:p-6 lg:p-8"
-            >
-              <div
-                class="mb-4 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 sm:mb-6 sm:h-16 sm:w-16 sm:rounded-2xl"
-              >
-                <i class="fas fa-code text-lg text-white sm:text-2xl"></i>
-              </div>
-              <h3 class="mb-3 text-lg font-bold text-gray-900 dark:text-white sm:mb-4 sm:text-xl">
-                智能代码生成
-              </h3>
-              <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-300 sm:text-base">
-                基于Claude，gemini，openai技术，自动生成高质量的代码片段，提升开发效率
-              </p>
-            </div>
-          </div>
-
-          <!-- 错误诊断修复 -->
-          <div
-            class="group transform transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
-          >
-            <div
-              class="flex h-full flex-col rounded-2xl bg-white p-4 shadow-lg dark:bg-gray-800 sm:rounded-3xl sm:p-6 lg:p-8"
-            >
-              <div
-                class="mb-4 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-orange-500 sm:mb-6 sm:h-16 sm:w-16 sm:rounded-2xl"
-              >
-                <i class="fas fa-bug text-lg text-white sm:text-2xl"></i>
-              </div>
-              <h3 class="mb-3 text-lg font-bold text-gray-900 dark:text-white sm:mb-4 sm:text-xl">
-                错误诊断修复
-              </h3>
-              <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-300 sm:text-base">
-                智能识别代码错误，提供精准的修复建议和优化方案
-              </p>
-            </div>
-          </div>
-
-          <!-- 代码重构优化 -->
-          <div
-            class="group transform transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
-          >
-            <div
-              class="flex h-full flex-col rounded-2xl bg-white p-4 shadow-lg dark:bg-gray-800 sm:rounded-3xl sm:p-6 lg:p-8"
-            >
-              <div
-                class="mb-4 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-teal-500 sm:mb-6 sm:h-16 sm:w-16 sm:rounded-2xl"
-              >
-                <i class="fas fa-sync-alt text-lg text-white sm:text-2xl"></i>
-              </div>
-              <h3 class="mb-3 text-lg font-bold text-gray-900 dark:text-white sm:mb-4 sm:text-xl">
-                代码重构优化
-              </h3>
-              <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-300 sm:text-base">
-                分析现有代码结构，提供最佳实践的重构建议
-              </p>
-            </div>
-          </div>
-
-          <!-- 多语言支持 -->
-          <div
-            class="group transform transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
-          >
-            <div
-              class="flex h-full flex-col rounded-2xl bg-white p-4 shadow-lg dark:bg-gray-800 sm:rounded-3xl sm:p-6 lg:p-8"
-            >
-              <div
-                class="mb-4 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 sm:mb-6 sm:h-16 sm:w-16 sm:rounded-2xl"
-              >
-                <i class="fas fa-globe text-lg text-white sm:text-2xl"></i>
-              </div>
-              <h3 class="mb-3 text-lg font-bold text-gray-900 dark:text-white sm:mb-4 sm:text-xl">
-                多语言支持
-              </h3>
-              <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-300 sm:text-base">
-                支持20+主流编程语言，满足不同开发场景需求
-              </p>
-            </div>
-          </div>
-
-          <!-- Git集成 -->
-          <div
-            class="group transform transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
-          >
-            <div
-              class="flex h-full flex-col rounded-2xl bg-white p-4 shadow-lg dark:bg-gray-800 sm:rounded-3xl sm:p-6 lg:p-8"
-            >
-              <div
-                class="mb-4 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-gray-700 to-gray-900 sm:mb-6 sm:h-16 sm:w-16 sm:rounded-2xl"
-              >
-                <i class="fab fa-git-alt text-lg text-white sm:text-2xl"></i>
-              </div>
-              <h3 class="mb-3 text-lg font-bold text-gray-900 dark:text-white sm:mb-4 sm:text-xl">
-                Git集成
-              </h3>
-              <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-300 sm:text-base">
-                无缝集成Git工作流，智能生成提交信息和分支管理
-              </p>
-            </div>
-          </div>
-
-          <!-- 项目理解 -->
-          <div
-            class="group transform transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
-          >
-            <div
-              class="flex h-full flex-col rounded-2xl bg-white p-4 shadow-lg dark:bg-gray-800 sm:rounded-3xl sm:p-6 lg:p-8"
-            >
-              <div
-                class="mb-4 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 sm:mb-6 sm:h-16 sm:w-16 sm:rounded-2xl"
-              >
-                <i class="fas fa-brain text-lg text-white sm:text-2xl"></i>
-              </div>
-              <h3 class="mb-3 text-lg font-bold text-gray-900 dark:text-white sm:mb-4 sm:text-xl">
-                项目理解
-              </h3>
-              <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-300 sm:text-base">
-                深度理解项目架构，提供上下文感知的代码建议
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 统计数据展示 -->
-        <div class="mt-16 text-center lg:mt-20">
-          <div class="grid grid-cols-2 gap-6 sm:gap-8 md:grid-cols-4">
-            <div class="space-y-2">
-              <div class="text-3xl font-bold text-blue-600 dark:text-blue-400 sm:text-4xl">
-                1000+
-              </div>
-              <div class="text-sm text-gray-600 dark:text-gray-300 sm:text-base">活跃开发者</div>
-            </div>
-            <div class="space-y-2">
-              <div class="text-3xl font-bold text-purple-600 dark:text-purple-400 sm:text-4xl">
-                20+
-              </div>
-              <div class="text-sm text-gray-600 dark:text-gray-300 sm:text-base">编程语言</div>
-            </div>
-            <div class="space-y-2">
-              <div class="text-3xl font-bold text-green-600 dark:text-green-400 sm:text-4xl">
-                99.9%
-              </div>
-              <div class="text-sm text-gray-600 dark:text-gray-300 sm:text-base">服务可用性</div>
-            </div>
-            <div class="space-y-2">
-              <div class="text-3xl font-bold text-orange-600 dark:text-orange-400 sm:text-4xl">
-                24/7
-              </div>
-              <div class="text-sm text-gray-600 dark:text-gray-300 sm:text-base">技术支持</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 用户评价区域 -->
-        <div class="mt-20 lg:mt-24">
-          <div class="mb-12 text-center">
-            <h2 class="mb-4 text-3xl font-bold text-gray-900 dark:text-white lg:text-4xl">
-              用户怎么说
-            </h2>
-            <p class="mx-auto max-w-2xl text-gray-600 dark:text-gray-300">
-              已有1000+开发者选择{{
-                oemSettings.siteName || 'Claude Relay Service'
-              }}，听听他们的真实体验
-            </p>
-          </div>
-
-          <!-- 用户类型分布 -->
-          <div class="mb-12 text-center">
-            <div class="flex flex-wrap items-center justify-center gap-8">
-              <div class="text-center">
-                <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">45%</div>
-                <div class="text-sm text-gray-600 dark:text-gray-300">企业用户</div>
-              </div>
-              <div class="text-center">
-                <div class="text-3xl font-bold text-cyan-500 dark:text-cyan-400">35%</div>
-                <div class="text-sm text-gray-600 dark:text-gray-300">个人开发者</div>
-              </div>
-              <div class="text-center">
-                <div class="text-3xl font-bold text-orange-500 dark:text-orange-400">20%</div>
-                <div class="text-sm text-gray-600 dark:text-gray-300">学生用户</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 用户评价卡片 -->
-          <div class="grid grid-cols-1 gap-6 lg:grid-cols-3 xl:gap-8">
-            <!-- 企业用户评价 -->
-            <div class="group transform transition-all duration-300 hover:-translate-y-2">
-              <div
-                class="flex h-full flex-col rounded-3xl bg-white p-6 shadow-lg dark:bg-gray-800 lg:p-8"
-              >
-                <div class="mb-4 flex items-center gap-4">
-                  <div
-                    class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600"
-                  >
-                    <i class="fas fa-building text-xl text-white"></i>
-                  </div>
-                  <div>
-                    <h4 class="font-semibold text-gray-900 dark:text-white">星辰科技</h4>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                      技术团队 • 50-100人 • 企业版
-                    </p>
-                  </div>
-                </div>
-                <blockquote class="mb-6 text-gray-600 dark:text-gray-300">
-                  "使用{{
-                    oemSettings.siteName || 'Claude Relay Service'
-                  }}后，我们团队的代码审查效率提升了60%，bug发现率提高了40%。特别是在重构老旧代码时，AI给出的建议非常精准。"
-                </blockquote>
-                <div class="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">60%</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">效率提升</div>
-                  </div>
-                  <div>
-                    <div class="text-2xl font-bold text-red-500 dark:text-red-400">40%</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">Bug减少</div>
-                  </div>
-                  <div class="col-span-2">
-                    <div class="text-2xl font-bold text-green-600 dark:text-green-400">95%</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">满意度</div>
-                  </div>
-                </div>
-                <div class="mt-4 text-sm text-gray-400 dark:text-gray-500">— 技术总监 陈智辉</div>
-              </div>
-            </div>
-
-            <!-- 个人开发者评价 -->
-            <div class="group transform transition-all duration-300 hover:-translate-y-2">
-              <div
-                class="flex h-full flex-col rounded-3xl bg-white p-6 shadow-lg dark:bg-gray-800 lg:p-8"
-              >
-                <div class="mb-4 flex items-center gap-4">
-                  <div
-                    class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-600"
-                  >
-                    <i class="fas fa-user-cog text-xl text-white"></i>
-                  </div>
-                  <div>
-                    <h4 class="font-semibold text-gray-900 dark:text-white">独立开发者</h4>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                      个人开发 • 全栈开发 • 专业版
-                    </p>
-                  </div>
-                </div>
-                <blockquote class="mb-6 text-gray-600 dark:text-gray-300">
-                  "作为个人开发者，{{
-                    oemSettings.siteName || 'Claude Relay Service'
-                  }}就像我的编程伙伴。无论是新技术学习还是项目开发，都能提供很好的帮助，大大节省了我的开发时间。"
-                </blockquote>
-                <div class="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <div class="text-2xl font-bold text-cyan-500 dark:text-cyan-400">50%</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">时间节省</div>
-                  </div>
-                  <div>
-                    <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">80%</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">生产力提升</div>
-                  </div>
-                  <div class="col-span-2">
-                    <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">快速</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">学习速度</div>
-                  </div>
-                </div>
-                <div class="mt-4 text-sm text-gray-400 dark:text-gray-500">— 全栈工程师 李智慧</div>
-              </div>
-            </div>
-
-            <!-- 学生用户评价 -->
-            <div class="group transform transition-all duration-300 hover:-translate-y-2">
-              <div
-                class="flex h-full flex-col rounded-3xl bg-white p-6 shadow-lg dark:bg-gray-800 lg:p-8"
-              >
-                <div class="mb-4 flex items-center gap-4">
-                  <div
-                    class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600"
-                  >
-                    <i class="fas fa-graduation-cap text-xl text-white"></i>
-                  </div>
-                  <div>
-                    <h4 class="font-semibold text-gray-900 dark:text-white">金星科技</h4>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                      金融科技 • 100-200人 • 企业版
-                    </p>
-                  </div>
-                </div>
-                <blockquote class="mb-6 text-gray-600 dark:text-gray-300">
-                  "在金融级的代码质量要求下，{{
-                    oemSettings.siteName || 'Claude Relay Service'
-                  }}帮助我们保持了高标准的代码规范，同时显著提升了开发效率。安全性和准确性都让我们很满意。"
-                </blockquote>
-                <div class="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">95%</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">代码质量</div>
-                  </div>
-                  <div>
-                    <div class="text-2xl font-bold text-green-600 dark:text-green-400">100%</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">合规性</div>
-                  </div>
-                  <div class="col-span-2">
-                    <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">45%</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">效率提升</div>
-                  </div>
-                </div>
-                <div class="mt-4 text-sm text-gray-400 dark:text-gray-500">— 架构师 王智强</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 准备开始区域 -->
-        <div class="mt-20 lg:mt-24">
-          <div
-            class="rounded-3xl bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 p-8 text-center text-white lg:p-12"
-          >
-            <h2 class="mb-4 text-3xl font-bold lg:text-4xl">准备开始您的AI编程之旅？</h2>
-            <p class="mb-8 text-lg opacity-90 lg:text-xl">专业客服团队随时为您提供咨询和技术支持</p>
-            <div class="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <button
-                class="group relative overflow-hidden rounded-2xl bg-white bg-opacity-20 px-8 py-4 font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:bg-opacity-30 hover:shadow-2xl"
-              >
-                <span class="flex items-center gap-2">
-                  <i class="fas fa-headset"></i>
-                  联系下方客服
-                </span>
-              </button>
-              <button
-                class="group relative overflow-hidden rounded-2xl border-2 border-white border-opacity-30 px-8 py-4 font-semibold text-white transition-all duration-300 hover:bg-white hover:bg-opacity-10 hover:shadow-2xl"
-                @click="currentTab = 'tutorial'"
-              >
-                <span class="flex items-center gap-2">
-                  <i class="fas fa-book-open"></i>
-                  查看安装教程
-                </span>
-              </button>
-            </div>
-
-            <!-- 服务信息 -->
-            <div class="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2">
-              <div class="flex items-center justify-center gap-3">
-                <div
-                  class="flex h-12 w-12 items-center justify-center rounded-full bg-white bg-opacity-20"
-                >
-                  <i class="fas fa-comments text-xl"></i>
-                </div>
-                <div class="text-left">
-                  <div class="font-semibold">在线客服</div>
-                  <div class="text-sm opacity-80">微信服务号搜：Geek星途</div>
-                </div>
-              </div>
-              <div class="flex items-center justify-center gap-3">
-                <div
-                  class="flex h-12 w-12 items-center justify-center rounded-full bg-white bg-opacity-20"
-                >
-                  <i class="fas fa-clock text-xl"></i>
-                </div>
-                <div class="text-left">
-                  <div class="font-semibold">服务时间</div>
-                  <div class="text-sm opacity-80">周一至周五 9:00-18:00</div>
-                </div>
-              </div>
-            </div>
-          </div>
+            <i class="fas fa-shield-alt text-sm md:text-base" />
+            <span class="text-xs font-semibold tracking-wide md:text-sm">管理后台</span>
+          </router-link>
         </div>
       </div>
     </div>
 
-    <!-- 页脚 -->
-    <footer class="mt-20 bg-gray-900 text-gray-300">
-      <div class="container mx-auto px-4 py-12 lg:px-8">
-        <div class="grid grid-cols-1 gap-8 md:grid-cols-4">
-          <!-- 公司信息 -->
-          <div class="md:col-span-2">
-            <div class="mb-6 flex items-center space-x-3">
-              <div
-                :class="[
-                  'flex h-10 w-10 items-center justify-center rounded-xl',
-                  oemSettings.siteIconData ? '' : 'bg-gradient-to-br from-blue-500 to-purple-600'
-                ]"
-              >
-                <img
-                  v-if="oemSettings.siteIconData"
-                  :alt="oemSettings.siteName || 'Claude Relay Service'"
-                  class="h-10 w-10 rounded-lg object-cover"
-                  :src="oemSettings.siteIconData"
-                />
-                <i v-else class="fas fa-project-diagram text-lg text-white"></i>
-              </div>
-              <span class="text-xl font-bold text-white">
-                {{ oemSettings.siteName || 'Claude Relay Service' }}
-              </span>
-            </div>
-            <p class="mb-6 max-w-md text-gray-400">
-              基于最先进的Claude，gemini，openai技术，为中国开发者提供专业级的API使用统计分析平台，让您的开发工作更加高效、智能。
-            </p>
-            <div class="flex space-x-4">
-              <a class="text-gray-400 transition-colors hover:text-blue-400" href="#">
-                <i class="fab fa-github text-xl"></i>
-              </a>
-              <a class="text-gray-400 transition-colors hover:text-blue-400" href="#">
-                <i class="fab fa-twitter text-xl"></i>
-              </a>
-              <a class="text-gray-400 transition-colors hover:text-blue-400" href="#">
-                <i class="fab fa-discord text-xl"></i>
-              </a>
-            </div>
-          </div>
-
-          <!-- 产品 -->
-          <div>
-            <h3 class="mb-4 text-lg font-semibold text-white">产品</h3>
-            <ul class="space-y-2 text-sm">
-              <li><a class="transition-colors hover:text-blue-400" href="#">API统计</a></li>
-              <li><a class="transition-colors hover:text-blue-400" href="#">代码分析</a></li>
-              <li><a class="transition-colors hover:text-blue-400" href="#">性能监控</a></li>
-              <li><a class="transition-colors hover:text-blue-400" href="#">团队协作</a></li>
-            </ul>
-          </div>
-
-          <!-- 支持 -->
-          <div>
-            <h3 class="mb-4 text-lg font-semibold text-white">支持</h3>
-            <ul class="space-y-2 text-sm">
-              <li><a class="transition-colors hover:text-blue-400" href="#">帮助中心</a></li>
-              <li><a class="transition-colors hover:text-blue-400" href="#">API文档</a></li>
-              <li><a class="transition-colors hover:text-blue-400" href="#">社区论坛</a></li>
-              <li><a class="transition-colors hover:text-blue-400" href="#">联系我们</a></li>
-            </ul>
-          </div>
-        </div>
-
-        <hr class="my-8 border-gray-800" />
-
-        <div class="flex flex-col items-center justify-between gap-4 md:flex-row">
-          <div class="text-sm text-gray-400">
-            Copyright © 2025 {{ oemSettings.siteName || 'Claude Relay Service' }}. All rights
-            reserved.
-          </div>
-          <div class="flex gap-6 text-sm">
-            <a class="text-gray-400 transition-colors hover:text-blue-400" href="#">隐私政策</a>
-            <a class="text-gray-400 transition-colors hover:text-blue-400" href="#">服务条款</a>
-            <a class="text-gray-400 transition-colors hover:text-blue-400" href="#">法律声明</a>
-          </div>
-        </div>
-      </div>
-    </footer>
-
-    <!-- 统计内容面板 -->
-    <div
-      v-if="currentTab === 'stats'"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      @click.self="currentTab = null"
-    >
-      <div
-        class="max-h-[90vh] w-full max-w-4xl overflow-auto rounded-3xl bg-white shadow-2xl dark:bg-gray-800"
-      >
+    <!-- Tab 切换 -->
+    <div class="mb-6 md:mb-8">
+      <div class="flex justify-center">
         <div
-          class="sticky top-0 rounded-t-3xl border-b border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800"
+          class="inline-flex w-full max-w-md rounded-full border border-white/20 bg-white/10 p-1 shadow-lg backdrop-blur-xl md:w-auto"
         >
-          <div class="flex items-center justify-between">
-            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">🚀 AI 编程用量查询</h2>
-            <button
-              class="text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              @click="currentTab = null"
-            >
-              <i class="fas fa-times text-xl"></i>
-            </button>
-          </div>
-          <p class="mt-2 text-gray-600 dark:text-gray-300">
-            查询您的 API Key 在 AI 编程服务中的用量统计和成本分析
-          </p>
-        </div>
-
-        <div class="p-6">
-          <!-- API Key 输入区域 -->
-          <div class="mb-6">
-            <ApiKeyInput />
-          </div>
-
-          <!-- 错误提示 -->
-          <div v-if="error" class="mb-6">
-            <div
-              class="animate-shake rounded-2xl border border-red-200 bg-red-50 p-4 text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-200"
-            >
-              <i class="fas fa-exclamation-triangle mr-2" />
-              {{ error }}
-            </div>
-          </div>
-
-          <!-- 统计数据展示区域 -->
-          <div v-if="statsData" class="fade-in">
-            <div class="space-y-6">
-              <!-- 时间范围选择器 -->
-              <div class="border-b border-gray-200 pb-6 dark:border-gray-700">
-                <div
-                  class="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-center"
-                >
-                  <div class="flex items-center gap-3">
-                    <i class="fas fa-clock text-lg text-blue-500" />
-                    <span class="text-lg font-medium text-gray-700 dark:text-gray-200"
-                      >编程用量时间范围</span
-                    >
-                  </div>
-                  <div class="flex flex-wrap gap-2">
-                    <button
-                      v-for="range in timeRanges"
-                      :key="range.value"
-                      class="rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 hover:scale-105"
-                      :class="
-                        selectedTimeRange === range.value
-                          ? 'bg-blue-500 text-white shadow-lg'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                      "
-                      @click="selectTimeRange(range.value)"
-                    >
-                      {{ range.label }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 统计概览 -->
-              <StatsOverview class="mb-6 rounded-2xl bg-gray-50 p-6 dark:bg-gray-900/50" />
-
-              <!-- 统计图表展示 -->
-              <div class="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <TokenDistribution class="rounded-2xl bg-gray-50 p-6 dark:bg-gray-900/50" />
-                <LimitConfig class="rounded-2xl bg-gray-50 p-6 dark:bg-gray-900/50" />
-              </div>
-
-              <!-- 模型使用统计 -->
-              <ModelUsageStats class="rounded-2xl bg-gray-50 p-6 dark:bg-gray-900/50" />
-            </div>
-          </div>
+          <button
+            :class="['tab-pill-button', currentTab === 'stats' ? 'active' : '']"
+            @click="currentTab = 'stats'"
+          >
+            <i class="fas fa-chart-line mr-1 md:mr-2" />
+            <span class="text-sm md:text-base">统计查询</span>
+          </button>
+          <button
+            :class="['tab-pill-button', currentTab === 'tutorial' ? 'active' : '']"
+            @click="currentTab = 'tutorial'"
+          >
+            <i class="fas fa-graduation-cap mr-1 md:mr-2" />
+            <span class="text-sm md:text-base">使用教程</span>
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- 教程内容面板 -->
-    <div
-      v-if="currentTab === 'tutorial'"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      @click.self="currentTab = null"
-    >
-      <div
-        class="max-h-[90vh] w-full max-w-4xl overflow-auto rounded-3xl bg-white shadow-2xl dark:bg-gray-800"
-      >
+    <!-- 统计内容 -->
+    <div v-if="currentTab === 'stats'" class="tab-content">
+      <!-- API Key 输入区域 -->
+      <ApiKeyInput />
+
+      <!-- 错误提示 -->
+      <div v-if="error" class="mb-6 md:mb-8">
         <div
-          class="sticky top-0 rounded-t-3xl border-b border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800"
+          class="rounded-xl border border-red-500/30 bg-red-500/20 p-3 text-sm text-red-800 backdrop-blur-sm dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200 md:p-4 md:text-base"
         >
-          <div class="flex items-center justify-between">
-            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">🎓 使用教程</h2>
-            <button
-              class="text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              @click="currentTab = null"
-            >
-              <i class="fas fa-times text-xl"></i>
-            </button>
-          </div>
-          <p class="mt-2 text-gray-600 dark:text-gray-300">详细了解如何使用我们的服务</p>
+          <i class="fas fa-exclamation-triangle mr-2" />
+          {{ error }}
         </div>
-        <div class="p-6">
-          <TutorialView />
+      </div>
+
+      <!-- 统计数据展示区域 -->
+      <div v-if="statsData" class="fade-in">
+        <div class="glass-strong rounded-3xl p-4 shadow-xl md:p-6">
+          <!-- 时间范围选择器 -->
+          <div class="mb-4 border-b border-gray-200 pb-4 dark:border-gray-700 md:mb-6 md:pb-6">
+            <div
+              class="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center md:gap-4"
+            >
+              <div class="flex items-center gap-2 md:gap-3">
+                <i class="fas fa-clock text-base text-blue-500 md:text-lg" />
+                <span class="text-base font-medium text-gray-700 dark:text-gray-200 md:text-lg"
+                  >统计时间范围</span
+                >
+              </div>
+              <div class="flex w-full gap-2 md:w-auto">
+                <button
+                  class="flex flex-1 items-center justify-center gap-1 px-4 py-2 text-xs font-medium md:flex-none md:gap-2 md:px-6 md:text-sm"
+                  :class="['period-btn', { active: statsPeriod === 'daily' }]"
+                  :disabled="loading || modelStatsLoading"
+                  @click="switchPeriod('daily')"
+                >
+                  <i class="fas fa-calendar-day text-xs md:text-sm" />
+                  今日
+                </button>
+                <button
+                  class="flex flex-1 items-center justify-center gap-1 px-4 py-2 text-xs font-medium md:flex-none md:gap-2 md:px-6 md:text-sm"
+                  :class="['period-btn', { active: statsPeriod === 'monthly' }]"
+                  :disabled="loading || modelStatsLoading"
+                  @click="switchPeriod('monthly')"
+                >
+                  <i class="fas fa-calendar-alt text-xs md:text-sm" />
+                  本月
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 基本信息和统计概览 -->
+          <StatsOverview />
+
+          <!-- Token 分布和限制配置 -->
+          <div class="mb-6 grid grid-cols-1 gap-4 md:mb-8 md:gap-6 lg:grid-cols-2">
+            <TokenDistribution />
+            <!-- 单key模式下显示限制配置 -->
+            <LimitConfig v-if="!multiKeyMode" />
+            <!-- 多key模式下显示聚合统计卡片，填充右侧空白 -->
+            <AggregatedStatsCard v-if="multiKeyMode" />
+          </div>
+
+          <!-- 模型使用统计 -->
+          <ModelUsageStats />
         </div>
       </div>
     </div>
 
-    <!-- 加载状态 -->
-    <div v-if="loading" class="fixed inset-0 z-50 flex items-center justify-center bg-black/5">
-      <div class="flex items-center gap-3 rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
-        <div class="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500"></div>
-        <span class="font-medium text-gray-700 dark:text-gray-200">加载中...</span>
+    <!-- 教程内容 -->
+    <div v-if="currentTab === 'tutorial'" class="tab-content">
+      <div class="glass-strong rounded-3xl shadow-xl">
+        <TutorialView />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watchEffect } from 'vue'
-import { useSettingsStore } from '@/stores/settings'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import { useApiStatsStore } from '@/stores/apistats'
+import { useThemeStore } from '@/stores/theme'
+import LogoTitle from '@/components/common/LogoTitle.vue'
 import ThemeToggle from '@/components/common/ThemeToggle.vue'
-import TutorialView from '@/views/TutorialView.vue'
 import ApiKeyInput from '@/components/apistats/ApiKeyInput.vue'
+import StatsOverview from '@/components/apistats/StatsOverview.vue'
 import TokenDistribution from '@/components/apistats/TokenDistribution.vue'
 import LimitConfig from '@/components/apistats/LimitConfig.vue'
+import AggregatedStatsCard from '@/components/apistats/AggregatedStatsCard.vue'
 import ModelUsageStats from '@/components/apistats/ModelUsageStats.vue'
-import StatsOverview from '@/components/apistats/StatsOverview.vue'
+import TutorialView from './TutorialView.vue'
 
-// Stores
-const settingsStore = useSettingsStore()
+const route = useRoute()
 const apiStatsStore = useApiStatsStore()
+const themeStore = useThemeStore()
 
-// Data
-const currentTab = ref(null)
-const selectedTimeRange = ref('7d')
+// 当前标签页
+const currentTab = ref('stats')
 
-// Computed
-const oemSettings = computed(() => settingsStore.oemSettings)
-const statsData = computed(() => apiStatsStore.statsData)
-const error = computed(() => apiStatsStore.error)
-const loading = computed(() => settingsStore.loading || apiStatsStore.loading)
+// 主题相关
+const isDarkMode = computed(() => themeStore.isDarkMode)
 
-const timeRanges = [
-  { label: '今天', value: '1d' },
-  { label: '最近7天', value: '7d' },
-  { label: '最近30天', value: '30d' },
-  { label: '最近90天', value: '90d' }
-]
+const {
+  apiKey,
+  apiId,
+  loading,
+  modelStatsLoading,
+  oemLoading,
+  error,
+  statsPeriod,
+  statsData,
+  oemSettings,
+  multiKeyMode
+} = storeToRefs(apiStatsStore)
 
-// Methods
-const selectTimeRange = (range) => {
-  selectedTimeRange.value = range
-  // 这里可以添加重新获取数据的逻辑
+const { queryStats, switchPeriod, loadStatsWithApiId, loadOemSettings, reset } = apiStatsStore
+
+// 处理键盘快捷键
+const handleKeyDown = (event) => {
+  // Ctrl/Cmd + Enter 查询
+  if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+    if (!loading.value && apiKey.value.trim()) {
+      queryStats()
+    }
+    event.preventDefault()
+  }
+
+  // ESC 清除数据
+  if (event.key === 'Escape') {
+    reset()
+  }
 }
 
-// 动态更新页面标题
-watchEffect(() => {
-  const siteName = oemSettings.value.siteName || 'Claude Relay Service'
-  document.title = `${siteName} - API统计分析`
-})
+// 初始化
+onMounted(() => {
+  console.log('API Stats Page loaded')
 
-// Lifecycle
-onMounted(async () => {
-  await settingsStore.loadOemSettings()
-  // 初始化 OEM 设置到 apistats store
-  await apiStatsStore.loadOemSettings()
-})
+  // 初始化主题（因为该页面不在 MainLayout 内）
+  themeStore.initTheme()
 
-const servicePlans = ref([
-  {
-    id: 'claude',
-    name: 'ClaudeCode 套餐',
-    tag: '推荐',
-    tagClass: 'bg-blue-600',
-    icon: 'fas fa-code',
-    iconBg: 'bg-gradient-to-br from-blue-500 to-purple-600',
-    description: '专业级代码理解与重构，最适合 IDE 编程场景',
-    features: ['Sonnet 4 级推理与工具调用', '大型代码上下文与文件感知', '代码审查与重构建议'],
-    featureIconClass: 'text-blue-600'
-  },
-  {
-    id: 'gpt',
-    name: 'GPT‑5 套餐',
-    tag: '全能',
-    tagClass: 'bg-purple-600',
-    icon: 'fas fa-brain',
-    iconBg: 'bg-gradient-to-br from-purple-500 to-pink-500',
-    description: '通用智能推理与多模态理解，适合 Agent 与产品化',
-    features: ['高精准长链路推理', '高质量文本与结构化输出', '多模态理解与工具集成'],
-    featureIconClass: 'text-purple-600'
-  },
-  {
-    id: 'gemini',
-    name: 'Gemini 套餐',
-    tag: '性价比',
-    tagClass: 'bg-emerald-600',
-    icon: 'fas fa-star',
-    iconBg: 'bg-gradient-to-br from-green-500 to-teal-500',
-    description: '原生多模态与低延迟响应，适合检索、问答与内容生成',
-    features: ['图片/视频/文本多模态', '低延迟、成本友好', '适配检索增强场景'],
-    featureIconClass: 'text-emerald-600'
+  // 加载 OEM 设置
+  loadOemSettings()
+
+  // 检查 URL 参数
+  const urlApiId = route.query.apiId
+  const urlApiKey = route.query.apiKey
+
+  if (
+    urlApiId &&
+    urlApiId.match(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i)
+  ) {
+    // 如果 URL 中有 apiId，直接使用 apiId 加载数据
+    apiId.value = urlApiId
+    loadStatsWithApiId()
+  } else if (urlApiKey && urlApiKey.length > 10) {
+    // 向后兼容，支持 apiKey 参数
+    apiKey.value = urlApiKey
   }
-])
+
+  // 添加键盘事件监听
+  document.addEventListener('keydown', handleKeyDown)
+})
+
+// 清理
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeyDown)
+})
+
+// 监听 API Key 变化
+watch(apiKey, (newValue) => {
+  if (!newValue) {
+    apiStatsStore.clearData()
+  }
+})
 </script>
 
 <style scoped>
-/* 动画样式 */
-@keyframes shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  10%,
-  30%,
-  50%,
-  70%,
-  90% {
-    transform: translateX(-5px);
-  }
-  20%,
-  40%,
-  60%,
-  80% {
-    transform: translateX(5px);
+/* 渐变背景 */
+.gradient-bg {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* 暗色模式的渐变背景 */
+.gradient-bg-dark {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  position: relative;
+}
+
+.gradient-bg::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 20% 80%, rgba(240, 147, 251, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(102, 126, 234, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(118, 75, 162, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 暗色模式的背景覆盖 */
+.gradient-bg-dark::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 20% 80%, rgba(100, 116, 139, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(71, 85, 105, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(30, 41, 59, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 玻璃态效果 - 使用CSS变量 */
+.glass-strong {
+  background: var(--glass-strong-color);
+  backdrop-filter: blur(25px);
+  border: 1px solid var(--border-color);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 1;
+}
+
+/* 暗色模式的玻璃态效果 */
+:global(.dark) .glass-strong {
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(55, 65, 81, 0.3),
+    inset 0 1px 0 rgba(75, 85, 99, 0.2);
+}
+
+/* 标题渐变 */
+.header-title {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+/* 用户登录按钮 */
+.user-login-button {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  text-decoration: none;
+  box-shadow:
+    0 4px 12px rgba(52, 211, 153, 0.25),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+  font-weight: 600;
+}
+
+/* 暗色模式下的用户登录按钮 */
+:global(.dark) .user-login-button {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  color: white;
+  box-shadow:
+    0 4px 12px rgba(52, 211, 153, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+.user-login-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.user-login-button:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 8px 20px rgba(52, 211, 153, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.user-login-button:hover::before {
+  opacity: 1;
+}
+
+/* 暗色模式下的悬停效果 */
+:global(.dark) .user-login-button:hover {
+  box-shadow:
+    0 8px 20px rgba(52, 211, 153, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  border-color: rgba(52, 211, 153, 0.5);
+}
+
+.user-login-button:active {
+  transform: translateY(-1px) scale(1);
+}
+
+/* 确保图标和文字在所有模式下都清晰可见 */
+.user-login-button i,
+.user-login-button span {
+  position: relative;
+  z-index: 1;
+}
+
+/* 管理后台按钮 - 精致版本 */
+.admin-button-refined {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  text-decoration: none;
+  box-shadow:
+    0 4px 12px rgba(102, 126, 234, 0.25),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+  font-weight: 600;
+}
+
+/* 暗色模式下的管理后台按钮 */
+:global(.dark) .admin-button-refined {
+  background: rgba(55, 65, 81, 0.8);
+  border: 1px solid rgba(107, 114, 128, 0.4);
+  color: #f3f4f6;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.05);
+}
+
+.admin-button-refined::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.admin-button-refined:hover {
+  transform: translateY(-2px) scale(1.02);
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  box-shadow:
+    0 8px 20px rgba(118, 75, 162, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: white;
+}
+
+.admin-button-refined:hover::before {
+  opacity: 1;
+}
+
+/* 暗色模式下的悬停效果 */
+:global(.dark) .admin-button-refined:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: rgba(147, 51, 234, 0.4);
+  box-shadow:
+    0 8px 20px rgba(102, 126, 234, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.admin-button-refined:active {
+  transform: translateY(-1px) scale(1);
+}
+
+/* 确保图标和文字在所有模式下都清晰可见 */
+.admin-button-refined i,
+.admin-button-refined span {
+  position: relative;
+  z-index: 1;
+}
+
+/* 时间范围按钮 */
+.period-btn {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.period-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow:
+    0 10px 15px -3px rgba(102, 126, 234, 0.3),
+    0 4px 6px -2px rgba(102, 126, 234, 0.05);
+  transform: translateY(-1px);
+}
+
+.period-btn:not(.active) {
+  color: #374151;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+:global(html.dark) .period-btn:not(.active) {
+  color: #e5e7eb;
+  background: rgba(55, 65, 81, 0.4);
+  border: 1px solid rgba(75, 85, 99, 0.5);
+}
+
+.period-btn:not(.active):hover {
+  background: rgba(255, 255, 255, 0.8);
+  color: #1f2937;
+  border-color: rgba(209, 213, 219, 0.8);
+}
+
+:global(html.dark) .period-btn:not(.active):hover {
+  background: rgba(75, 85, 99, 0.6);
+  color: #ffffff;
+  border-color: rgba(107, 114, 128, 0.8);
+}
+
+/* Tab 胶囊按钮样式 */
+.tab-pill-button {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.8);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  flex: 1;
+  justify-content: center;
+}
+
+/* 暗夜模式下的Tab按钮基础样式 */
+:global(html.dark) .tab-pill-button {
+  color: rgba(209, 213, 219, 0.8);
+}
+
+@media (min-width: 768px) {
+  .tab-pill-button {
+    padding: 0.625rem 1.25rem;
+    flex: none;
   }
 }
 
-.animate-shake {
-  animation: shake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+.tab-pill-button:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
 }
 
-@keyframes fadeIn {
+:global(html.dark) .tab-pill-button:hover {
+  color: #f3f4f6;
+  background: rgba(100, 116, 139, 0.2);
+}
+
+.tab-pill-button.active {
+  background: white;
+  color: #764ba2;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+:global(html.dark) .tab-pill-button.active {
+  background: rgba(71, 85, 105, 0.9);
+  color: #f3f4f6;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.3),
+    0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+.tab-pill-button i {
+  font-size: 0.875rem;
+}
+
+/* Tab 内容切换动画 */
+.tab-content {
+  animation: tabFadeIn 0.4s ease-out;
+}
+
+@keyframes tabFadeIn {
   from {
     opacity: 0;
     transform: translateY(20px);
@@ -977,12 +584,12 @@ const servicePlans = ref([
   }
 }
 
+/* 动画效果 */
 .fade-in {
-  animation: fadeIn 0.5s ease-out;
+  animation: fadeIn 0.6s ease-out;
 }
 
-/* 新增动画 */
-@keyframes fadeInUp {
+@keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(30px);
@@ -990,262 +597,6 @@ const servicePlans = ref([
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes gradientX {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-@keyframes bounceSmooth {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-@keyframes glow {
-  0%,
-  100% {
-    box-shadow: 0 0 5px rgba(34, 197, 94, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(34, 197, 94, 0.8);
-  }
-}
-
-@keyframes typewriter {
-  from {
-    width: 0;
-  }
-  to {
-    width: 100%;
-  }
-}
-
-/* 动画类 - 优化缓动函数 */
-.animate-fade-in-up {
-  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.animate-slide-in-left {
-  animation: slideInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.animate-slide-in-right {
-  animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.animate-gradient-x {
-  background-size: 200% 200%;
-  animation: gradientX 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-.animate-bounce-slow {
-  animation: bounceSmooth 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-.animate-float {
-  animation: float 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-.animate-glow {
-  animation: glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-.animate-type-writer {
-  animation: typewriter 1.5s steps(20, end) both;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-/* 动画延迟 - 优化为更短延迟 */
-.animation-delay-100 {
-  animation-delay: 50ms;
-}
-
-.animation-delay-200 {
-  animation-delay: 100ms;
-}
-
-.animation-delay-300 {
-  animation-delay: 150ms;
-}
-
-.animation-delay-400 {
-  animation-delay: 200ms;
-}
-
-.animation-delay-500 {
-  animation-delay: 250ms;
-}
-
-.animation-delay-600 {
-  animation-delay: 300ms;
-}
-
-.animation-delay-700 {
-  animation-delay: 350ms;
-}
-
-.animation-delay-800 {
-  animation-delay: 400ms;
-}
-
-.animation-delay-900 {
-  animation-delay: 450ms;
-}
-
-.animation-delay-1000 {
-  animation-delay: 500ms;
-}
-
-/* 特殊效果 */
-.text-shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.3) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-/* 悬停效果增强 */
-.group:hover .animate-pulse {
-  animation-duration: 0.5s;
-}
-
-.group:hover .animate-bounce {
-  animation-duration: 0.8s;
-}
-
-/* 响应式动画优化 */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* 性能优化 */
-.animate-fade-in-up,
-.animate-slide-in-left,
-.animate-slide-in-right,
-.animate-float,
-.animate-bounce-slow,
-.animate-glow {
-  will-change: transform, opacity;
-  backface-visibility: hidden;
-  transform: translateZ(0);
-}
-
-/* 移动端优化 */
-@media (max-width: 640px) {
-  .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-
-  /* 减少移动端的动画强度 */
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  .animate-bounce-slow {
-    animation: bounceSmooth 4s ease-in-out infinite;
-  }
-
-  .animate-glow {
-    animation: glow 4s ease-in-out infinite;
-  }
-
-  /* 优化特性卡片在移动端的间距 */
-  .group {
-    margin-bottom: 0.5rem;
-  }
-
-  /* 降低移动端动画复杂度 */
-  .animate-gradient-x {
-    animation: gradientX 6s ease-in-out infinite;
-  }
-}
-
-/* 平板端优化 */
-@media (min-width: 641px) and (max-width: 1024px) {
-  /* 在平板端保持适中的动画效果 */
-  .animate-glow {
-    animation: glow 2.5s ease-in-out infinite;
-  }
-}
-
-/* 大屏幕优化 */
-@media (min-width: 1440px) {
-  .container {
-    max-width: 1280px;
-  }
-
-  /* 增强大屏幕的动画效果 */
-  .animate-float {
-    animation: float 2s ease-in-out infinite;
-  }
-
-  .animate-bounce-slow {
-    animation: bounceSmooth 1.5s ease-in-out infinite;
   }
 }
 </style>

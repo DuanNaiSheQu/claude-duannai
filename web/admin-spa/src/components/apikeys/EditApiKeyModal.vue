@@ -741,22 +741,7 @@ const removeRestrictedModel = (index) => {
 }
 
 // 常用模型列表
-const commonModels = ref([
-  // Claude 模型
-  'claude-opus-4-20250514',
-  'claude-opus-4-1-20250805',
-  // OpenAI 模型
-  'gpt-5',
-  'gpt-5 minimal',
-  'gpt-5 low',
-  'gpt-5 medium',
-  'gpt-5 high',
-  'gpt-4o',
-  'gpt-4o-mini',
-  'o1',
-  'o1-mini',
-  'o1-preview'
-])
+const commonModels = ref(['claude-opus-4-20250514', 'claude-opus-4-1-20250805'])
 
 // 可用的快捷模型（过滤掉已在限制列表中的）
 const availableQuickModels = computed(() => {
